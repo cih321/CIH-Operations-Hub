@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>CIH Operations Hub</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">Center for Indigenous Health Operations Hub</a>
+    <div class="spacer"></div>
+    <button id="appbtn" class="launcher" aria-haspopup="menu" aria-expanded="false" aria-controls="apppanel" aria-label="Open app launcher">
+      <svg viewBox="0 0 24 24" width="22" height="22"><g fill="#111">
+        <circle cx="5" cy="5" r="1.8"/><circle cx="12" cy="5" r="1.8"/><circle cx="19" cy="5" r="1.8"/>
+        <circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>
+        <circle cx="5" cy="19" r="1.8"/><circle cx="12" cy="19" r="1.8"/><circle cx="19" cy="19" r="1.8"/>
+      </g></svg>
+    </button>
+    <div id="apppanel" class="panel" role="menu" hidden></div>
+  </header>
+
+  <main class="page">
+    <div class="hero-blank">
+      <h1>Welcome</h1>
+      <p>This is a placeholder home page. Use the launcher to navigate.</p>
+      <p><a class="btn" href="facilities.html">Go to Facilities</a></p>
+    </div>
+  </main>
+
+  <script src="app.api.js"></script>
+  <script src="app.main.js"></script>
+  <script>
+    setupTopbarLauncher([
+      { id:'facilities', label:'Facilities', href:'facilities.html', icon:'🏢' },
+      { id:'vehicles',   label:'Vehicles',   href:'#',              icon:'🚗' },
+      { id:'people',     label:'People',     href:'#',              icon:'👤' },
+      { id:'reports',    label:'Reports',    href:'#',              icon:'📊' },
+      { id:'settings',   label:'Settings',   href:'#',              icon:'⚙️' },
+    ]);
+  </script>
+</body>
+</html>
