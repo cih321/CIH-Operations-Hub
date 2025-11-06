@@ -1,294 +1,138 @@
-async function initFacilitiesPage(){
-  const grid = document.getElementById('facGrid');
-  const facs = await API.listFacilities();
+/* ---- Global Reset ------------------------------------------------------ */
+* { box-sizing: border-box; }
 
-  for(const f of facs){
-    const rentRows = await API.listRentPeriods(f.id);
-    const cost = currentMonthlyCost(rentRows);
-
-    const card = el('article','card');
-    const color = el('div','colorbar'); card.appendChild(color);
-
-    const hdr = el('div','row');
-    const name = el('div'); name.innerHTML = `<strong>${f.community}, ${f.state}</strong>`;
-    hdr.appendChild(name); card.appendChild(hdr);
-
-    const meta = el('div','kvrow');
-    meta.innerHTML = `
-      <div>📍 <span class="mono">Building ID:</span> ${f.buildingId||'—'}</div>
-      <div>🏠 <span class="mono">Street:</span> ${f.street||'—'}</div>
-      <div>📡 <span class="mono">GPS:</span> ${f.gps||'—'}</div>`;
-    card.appendChild(meta);
-
-    const pills = el('div','pills');
-    pills.innerHTML = `
-      <span class="pill">Status: ${f.status||'—'}</span>
-      <span class="pill">Ownership: ${f.ownership?.building||'—'}</span>
-      <span class="pill">Monthly: ${fmtMoney(cost)}</span>`;
-    card.appendChild(pills);
-
-    const btn = el('div'); btn.style.marginTop='auto';
-    btn.innerHTML = `<button class="btn">Open Card</button>`;
-    btn.querySelector('button').addEventListener('click',()=>openFacilityModal(f.id));
-    card.appendChild(btn);
-
-    grid.appendChild(card);
-  }
+html, body {
+  margin: 0; padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  background: #fafafa; color: #111;
 }
 
-/* MODAL + TABS */
-const modal = {
-  root: null, title:null, subtitle:null, closeBtn:null,
-  currentId:null
-};
+/* Keep content below the fixed top bar */
+body { padding-top: 60px; }
 
-function wireModal(){
-  modal.root = document.getElementById('facilityModal');
-  modal.title = document.getElementById('modaltitle');
-  modal.subtitle = document.getElementById('modalSubtitle');
-  modal.closeBtn = document.getElementById('modalClose');
-  modal.closeBtn.addEventListener('click', closeModal);
-  modal.root.addEventListener('click', e=>{ if(e.target===modal.root) closeModal(); });
-
-  document.querySelectorAll('.tab').forEach(t=>{
-    t.addEventListener('click', ()=>{
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-      document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
-      document.getElementById('tab-'+t.dataset.tab).classList.add('active');
-    });
-  });
-
-  // Wire Ownership actions
-  document.getElementById('rentAddBtn').addEventListener('click', onAddRentRow);
-  document.getElementById('leaseUploadBtn').addEventListener('click', onLeaseUpload);
-
-  // Log
-  document.getElementById('logAddBtn').addEventListener('click', onAddLog);
-  document.getElementById('logSearch').addEventListener('input', onSearchLog);
-
-  // Utilities
-  document.getElementById('utilAddBtn').addEventListener('click', onAddUtility);
-
-  // Access
-  document.getElementById('accessAddBtn').addEventListener('click', onAddAccess);
+/* ---- Top Navigation Bar ------------------------------------------------ */
+.topbar{
+  position:fixed; inset:0 0 auto 0; height:60px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; background:#f3f4f6; border-bottom:1px solid #e5e7eb;
+  box-shadow:0 2px 8px rgba(0,0,0,.06); z-index:1000;
 }
-wireModal();
+.brand{ font-weight:600; color:#111; text-decoration:none; }
+.brand:hover{ text-decoration:underline; }
 
-async function openFacilityModal(facilityId){
-  modal.currentId = facilityId;
-  const f = await API.getFacility(facilityId);
-  modal.title.textContent = `${f.community}, ${f.state}`;
-  modal.subtitle.textContent = f.buildingId ? `Building ID: ${f.buildingId}` : '';
-  // reset to Overview tab
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
-  document.querySelector('.tab[data-tab="overview"]').classList.add('active');
-  document.getElementById('tab-overview').classList.add('active');
-  // fill overview
-  fillOverview(f);
-  // fill ownership
-  fillOwnership(f);
-  // utilities
-  renderUtilities(facilityId);
-  // access
-  renderAccess(facilityId);
-  // log
-  renderLog(facilityId);
-
-  document.getElementById('facilityModal').hidden = false;
-  document.getElementById('modalClose').focus();
+/* ---- Launcher Button & Panel ------------------------------------------ */
+.launcher{
+  display:grid; place-items:center; border:none; background:transparent;
+  padding:6px; cursor:pointer; border-radius:8px;
 }
-function closeModal(){ document.getElementById('facilityModal').hidden = true; }
+.launcher:hover{ background:rgba(0,0,0,.05); }
+.launcher:focus{ outline:2px solid #2563eb; outline-offset:2px; }
 
-/* ---- Fillers ---- */
-function fillOverview(f){
-  setText('ov-status', f.status||'—');
-  setText('ov-street', f.street||'—');
-  setText('ov-mail', f.mailing||'—');
-  setText('ov-gps', f.gps||'—');
-  setLinkOrDash('ov-onedrive', f.onedrive);
-  setText('ov-year', f.facts?.year ?? '—');
-  setText('ov-sqft', f.facts?.sqft ?? '—');
-  setText('ov-type', f.facts?.type ?? '—');
-  setText('ov-liaison-name', f.liaison?.name ?? '—');
-  setLinkOrDash('ov-liaison-email', f.liaison?.email ? `mailto:${f.liaison.email}` : '');
-  setLinkOrDash('ov-liaison-phone', f.liaison?.phone ? `tel:${f.liaison.phone}` : '');
-  setText('ov-notes', f.notes||'');
+.panel{
+  position:absolute; top:56px; right:12px; width:320px; max-height:70vh; overflow-y:auto;
+  background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+  box-shadow:0 12px 24px rgba(0,0,0,.12); padding:12px; z-index:1100;
+}
+.panel[hidden]{ display:none !important; }
+.panel:not([hidden]){ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+
+.tile{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:10px; text-decoration:none; border-radius:10px; color:#111; font-size:14px;
+}
+.tile:hover,.tile:focus{ background:#f3f4f6; outline:none; }
+.tile .ico{ font-size:22px; margin-bottom:6px; }
+
+/* ---- Page Layout ------------------------------------------------------- */
+.page{ max-width:1200px; margin:0 auto; padding:24px 16px; }
+.page-title{ margin:0 0 16px 4px; font-size:22px; font-weight:700; }
+
+/* ---- Facilities Grid & Card ------------------------------------------- */
+.grid2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+@media (max-width:900px){ .grid2{ grid-template-columns:1fr; } }
+
+/* New card look: big radius, soft shadow, fixed height */
+.card{
+  position:relative;
+  background:#ffffff;
+  border:1px solid #eceff3;
+  border-radius:20px;
+  box-shadow:0 10px 20px rgba(17,24,39,0.06);
+  height:280px;                /* FIXED HEIGHT */
+  padding:0; overflow:hidden; display:flex; flex-direction:column;
 }
 
-async function fillOwnership(f){
-  setText('own-building', f.ownership?.building ?? '—');
-  setText('own-land',     f.ownership?.land ?? '—');
-  setText('own-landlord', f.ownership?.landlord || '—');
-  setText('own-notes', f.ownership?.notes || '');
+/* thin color line at top (you can vary per region/status) */
+.card .colorbar{ height:6px; background:#c7d2fe; } /* indigo-200 */
 
-  const tbody = document.querySelector('#rentTable tbody');
-  tbody.innerHTML = '';
-  const rows = await API.listRentPeriods(f.id);
-  rows.forEach(r=>{
-    const tr = el('tr');
-    tr.innerHTML = `
-      <td>${r.start||'—'}</td>
-      <td>${r.end||'—'}</td>
-      <td>${fmtMoney(r.monthly)}</td>
-      <td><button class="iconbtn" data-id="${r.id}" data-act="edit">✏️</button>
-          <button class="iconbtn" data-id="${r.id}" data-act="del">🗑️</button></td>`;
-    tbody.appendChild(tr);
-  });
-  tbody.addEventListener('click', async (e)=>{
-    const b=e.target.closest('button'); if(!b) return;
-    const id=b.dataset.id, act=b.dataset.act;
-    if(act==='del'){ await API.deleteRentPeriod(id); fillOwnership(f); refreshGridPill(f.id); }
-    if(act==='edit'){
-      const start=prompt('Start (YYYY-MM-DD):'); if(start===null) return;
-      const end=prompt('End (YYYY-MM-DD or blank for none):',''); if(end===null) return;
-      const monthly=parseFloat(prompt('Monthly rent:', '0')||'0');
-      await API.updateRentPeriod(id,{ start, end:end||null, monthly }); fillOwnership(f); refreshGridPill(f.id);
-    }
-  }, { once:true });
+/* inner padding and layout */
+.card .card-body{ padding:16px; display:flex; flex-direction:column; gap:10px; }
 
-  // lease uploads
-  const files = await API.listLeaseFiles(f.id);
-  const ul = document.getElementById('leaseUploads');
-  ul.innerHTML = files.map(fi=>`<li><a href="${fi.data}" download="${fi.name}">${fi.name}</a></li>`).join('') || '<li>None</li>';
+/* header: community/state bold like the screenshot title style */
+.card .card-title{
+  font-size:18px; font-weight:800; letter-spacing:-0.01em;
 }
 
-async function renderUtilities(fid){
-  const cont = document.getElementById('utilCards');
-  cont.innerHTML = '';
-  const list = await API.listUtilities(fid);
-  list.forEach(u=>{
-    const c = el('div','util');
-    c.innerHTML = `<strong>${u.type}</strong>
-      <div><label>Provider</label> ${u.provider||'—'}</div>
-      <div><label>Account</label> ${u.account||'—'}</div>
-      <div><label>Meter</label> ${u.meter||'—'}</div>
-      <div><label>Start</label> ${u.start||'—'}</div>
-      <div><label>Avg $/mo</label> ${u.avg??'—'}</div>
-      <div><label>Notes</label> ${u.notes||''}</div>
-      <div style="margin-top:6px">
-        <button class="btn btn-sm" data-id="${u.id}" data-act="edit">Edit</button>
-        <button class="btn btn-sm" data-id="${u.id}" data-act="del" style="background:#ef4444">Delete</button>
-      </div>`;
-    cont.appendChild(c);
-  });
-  cont.addEventListener('click', async (e)=>{
-    const b=e.target.closest('button'); if(!b) return;
-    const id=b.dataset.id, act=b.dataset.act;
-    if(act==='del'){ await API.deleteUtility(id); renderUtilities(fid); }
-    if(act==='edit'){
-      const type=prompt('Type (Electric/Water/Gas/Propane/Sewer/Trash/Internet):'); if(type===null) return;
-      const provider=prompt('Provider:'); if(provider===null) return;
-      const account=prompt('Account #:'); if(account===null) return;
-      const meter=prompt('Meter/Service ID:','')||'';
-      const start=prompt('Service Start (YYYY-MM-DD):','')||'';
-      const avg=parseFloat(prompt('Average $/mo:', '0')||'0');
-      const notes=prompt('Notes:','')||'';
-      await API.updateUtility(id,{type,provider,account,meter,start,avg,notes}); renderUtilities(fid);
-    }
-  }, { once:true });
+.card .meta{
+  display:grid; grid-template-columns:1fr; gap:6px;
+  color:#374151; font-size:14px;
+}
+.card .meta .line{ display:flex; gap:8px; align-items:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card .meta .label{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:#6b7280; }
+
+/* pill row like small chips */
+.pills{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.pill{
+  background:#eef2ff; border:1px solid #dfe3ff; color:#1f2a7a;
+  padding:4px 10px; font-size:12px; border-radius:999px; font-weight:600;
 }
 
-async function renderAccess(fid){
-  const tbody = document.querySelector('#accessTable tbody');
-  tbody.innerHTML = '';
-  const list = await API.listAccess(fid);
-  list.forEach(a=>{
-    const tr = el('tr');
-    tr.innerHTML = `<td>${a.person}</td><td>${a.type}</td><td>${a.areas||''}</td>
-      <td>${a.issued||''}</td><td>${a.reviewed||''}</td>
-      <td><button class="iconbtn" data-id="${a.id}" data-act="edit">✏️</button>
-          <button class="iconbtn" data-id="${a.id}" data-act="del">🗑️</button></td>`;
-    tbody.appendChild(tr);
-  });
-  tbody.addEventListener('click', async (e)=>{
-    const b=e.target.closest('button'); if(!b) return;
-    const id=b.dataset.id, act=b.dataset.act;
-    if(act==='del'){ await API.deleteAccess(id); renderAccess(fid); }
-    if(act==='edit'){
-      const person=prompt('Person:'); if(person===null) return;
-      const type=prompt('Access Type (Key/Fob/Keypad/Door Group):'); if(type===null) return;
-      const areas=prompt('Areas/Doors:','')||'';
-      const issued=prompt('Issued (YYYY-MM-DD):','')||'';
-      const reviewed=prompt('Reviewed (YYYY-MM-DD):','')||'';
-      await API.updateAccess(id,{person,type,areas,issued,reviewed}); renderAccess(fid);
-    }
-  }, { once:true });
+/* footer button anchored to bottom to keep heights equal */
+.card-footer{
+  margin-top:auto; padding:12px 16px; display:flex; justify-content:flex-end;
+  background:linear-gradient(to top, rgba(0,0,0,0.02), rgba(0,0,0,0));
 }
 
-async function renderLog(fid, q){
-  const list = q ? await API.searchLog(fid, q) : await API.listLog(fid);
-  const ul = document.getElementById('logList');
-  ul.innerHTML = '';
-  list.forEach(l=>{
-    const li = el('li','logitem');
-    const when = new Date(l.when).toLocaleString();
-    li.innerHTML = `<div><strong>${l.type}</strong> • ${l.title||''}</div>
-      <div class="muted">${when}</div>
-      <div class="prewrap" style="margin-top:6px">${l.desc||''}</div>
-      ${l.files?.length? `<div style="margin-top:6px">${l.files.map(f=>`<a href="${f.data}" download="${f.name}">📎 ${f.name}</a>`).join(' ')}</div>`:''}`;
-    ul.appendChild(li);
-  });
+/* primary button */
+.btn{
+  background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 14px;
+  cursor:pointer; font-weight:600;
 }
+.btn:hover{ filter:brightness(.95); }
 
-/* ---- Actions ---- */
-async function onAddRentRow(){
-  const f = await API.getFacility(modal.currentId);
-  const start=prompt('Start (YYYY-MM-DD):'); if(start===null) return;
-  const end=prompt('End (YYYY-MM-DD or blank):',''); if(end===null) return;
-  const monthly=parseFloat(prompt('Monthly rent:', '0')||'0');
-  await API.addRentPeriod(f.id,{ start, end:end||null, monthly });
-  fillOwnership(f); refreshGridPill(f.id);
-}
-async function onLeaseUpload(){
-  const f = await API.getFacility(modal.currentId);
-  const file = document.getElementById('leaseFile').files[0];
-  if(!file) return alert('Choose a file first.');
-  await API.uploadLeaseFile(f.id, file);
-  fillOwnership(f);
-}
-async function onAddUtility(){
-  const fid = modal.currentId;
-  const type=prompt('Type (Electric/Water/Gas/Propane/Sewer/Trash/Internet):'); if(type===null) return;
-  const provider=prompt('Provider:'); if(provider===null) return;
-  const account=prompt('Account #:','')||'';
-  const meter=prompt('Meter/Service ID:','')||'';
-  const start=prompt('Service Start (YYYY-MM-DD):','')||'';
-  const avg=parseFloat(prompt('Average $/mo:', '0')||'0');
-  const notes=prompt('Notes:','')||'';
-  await API.addUtility(fid,{type,provider,account,meter,start,avg,notes});
-  renderUtilities(fid);
-}
-async function onAddAccess(){
-  const fid = modal.currentId;
-  const person=prompt('Person:'); if(person===null) return;
-  const type=prompt('Access Type (Key/Fob/Keypad/Door Group):'); if(type===null) return;
-  const areas=prompt('Areas/Doors:','')||'';
-  const issued=prompt('Issued (YYYY-MM-DD):','')||'';
-  const reviewed=prompt('Reviewed (YYYY-MM-DD):','')||'';
-  await API.addAccess(fid,{person,type,areas,issued,reviewed});
-  renderAccess(fid);
-}
-async function onAddLog(){
-  const fid = modal.currentId;
-  const type=prompt('Type (Maintenance/Inspection/Incident/Delivery/Other):'); if(type===null) return;
-  const title=prompt('Title:','')||'';
-  const desc=prompt('Description:','')||'';
-  const when=new Date().toISOString();
-  const rec = await API.addLog(fid,{ type, title, desc, when });
-  renderLog(fid);
-}
-function onSearchLog(e){ renderLog(modal.currentId, e.target.value); }
+/* monospace helper for small values */
+.mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
-/* helpers */
-function setText(id,val){ document.getElementById(id).textContent = (val==null||val==='') ? '—' : val; }
-function setLinkOrDash(id, href){
-  const elx = document.getElementById(id); elx.innerHTML='';
-  if(href){ const a=document.createElement('a'); a.href=href; a.textContent = href.startsWith('mailto:')||href.startsWith('tel:')? href.split(':')[1] : 'Open'; a.target="_blank"; elx.appendChild(a); }
-  else elx.textContent='—';
-}
-async function refreshGridPill(fid){
-  // quick refresh of monthly pill by re-rendering grid (simple for now)
-  document.getElementById('facGrid').innerHTML=''; initFacilitiesPage();
-}
+/* ---- Modal & Tabs (unchanged from earlier) ---------------------------- */
+.modal{ position:fixed; inset:0; background:rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; z-index:1200; }
+.modal-card{ width:min(1200px,90vw); height:min(90vh,1000px); background:#fff; border-radius:14px; box-shadow:0 20px 40px rgba(0,0,0,.2); display:flex; flex-direction:column; }
+.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:#fff; z-index:1; }
+.modal-title{ display:flex; flex-direction:column; gap:2px; }
+.subtitle{ color:#6b7280; font-size:12px; }
+.iconbtn{ border:none; background:transparent; cursor:pointer; font-size:18px; }
+
+.tabs{ display:flex; gap:8px; padding:8px 12px; border-bottom:1px solid #e5e7eb; position:sticky; top:52px; background:#fff; z-index:1; }
+.tab{ background:transparent; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
+.tab.active{ background:#f3f4f6; }
+.tabpanes{ padding:12px 16px; overflow:auto; }
+.tabpane{ display:none; }
+.tabpane.active{ display:block; }
+
+.kv{ display:grid; grid-template-columns:220px 1fr; gap:10px; align-items:start; margin:8px 0; }
+.kv label{ color:#6b7280; }
+.prewrap{ white-space:pre-wrap; }
+.facts{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.table{ width:100%; border-collapse:collapse; }
+.table th,.table td{ border-bottom:1px solid #e5e7eb; padding:8px; }
+.utilgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.util{ border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
+.logbar{ display:flex; gap:8px; margin-bottom:8px; }
+.input{ padding:8px; border:1px solid #e5e7eb; border-radius:8px; width:100%; }
+.loglist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.logitem{ border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
+.chiplist{ display:flex; gap:8px; flex-wrap:wrap; }
+.filelist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+
+/* Home hero placeholder */
+.hero-blank{ display:grid; place-items:center; margin-top:40px; text-align:center; }
