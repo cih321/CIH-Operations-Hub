@@ -1,52 +1,130 @@
-:root{
-  --bg:#f3f4f6; --text:#111; --muted:#6b7280; --line:#e5e7eb;
-  --brand:#2563eb; --pill:#eef2ff; --card:#fff;
+/* ---- Global Reset ------------------------------------------------------ */
+
+* {
+  box-sizing: border-box;
 }
-*{box-sizing:border-box} body{margin:0;font:14px/1.45 system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:#fff}
-a{color:var(--brand);text-decoration:none} a:hover{text-decoration:underline}
-.page{padding:88px 16px 32px;max-width:1200px;margin:0 auto}
-.page-title{margin:0 0 16px 4px}
 
-.topbar{position:fixed;inset:0 0 auto 0;height:60px;background:var(--bg);display:flex;align-items:center;
-  padding:0 12px;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.06);z-index:1000}
-.brand{font-weight:600;color:var(--text)} .spacer{flex:1}
-.launcher{display:grid;place-items:center;border:none;background:transparent;cursor:pointer;padding:8px;border-radius:8px}
-.panel{position:absolute;top:56px;right:12px;width:320px;background:#fff;border:1px solid var(--line);border-radius:14px;
-  box-shadow:0 12px 24px rgba(0,0,0,.12);padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;border-radius:10px;color:var(--text)}
-.tile:hover{background:var(--bg)}
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  background: #fafafa;
+  color: #111;
+}
 
-.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
-@media (max-width:900px){.grid2{grid-template-columns:1fr}}
-.card{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:14px;display:flex;flex-direction:column;height:240px}
-.card .colorbar{height:4px;border-radius:10px;background:#94a3b8;margin:-14px -14px 10px}
-.row{display:flex;gap:8px;align-items:center}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.kvrow{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
-.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
-.pill{background:var(--pill);border:1px solid #c7d2fe;color:#3730a3;padding:4px 8px;border-radius:999px;font-size:12px}
-.btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-.btn:hover{filter:brightness(.95)} .input{padding:8px;border:1px solid var(--line);border-radius:8px;width:100%}
-.iconbtn{border:none;background:transparent;cursor:pointer;font-size:18px}
+/* Give pages room below the fixed topbar */
+body {
+  padding-top: 60px;
+}
 
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;z-index:1100}
-.modal-card{width:min(1200px,90vw);height:min(90vh,1000px);background:#fff;border-radius:14px;box-shadow:0 20px 40px rgba(0,0,0,.2);display:flex;flex-direction:column}
-.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
-.modal-title{display:flex;flex-direction:column;gap:2px}
-.subtitle{color:var(--muted);font-size:12px}
-.tabs{display:flex;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);position:sticky;top:52px;background:#fff;z-index:1}
-.tab{background:transparent;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
-.tab.active{background:var(--bg)} .tabpanes{padding:12px 16px;overflow:auto}
-.tabpane{display:none} .tabpane.active{display:block}
-.kv{display:grid;grid-template-columns:220px 1fr;gap:10px;align-items:start;margin:8px 0}
-.kv label{color:var(--muted)} .prewrap{white-space:pre-wrap}
-.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.table{width:100%;border-collapse:collapse} .table th,.table td{border-bottom:1px solid var(--line);padding:8px}
-.utilgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.util{border:1px solid var(--line);border-radius:10px;padding:10px}
-.logbar{display:flex;gap:8px;margin-bottom:8px}
-.loglist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.logitem{border:1px solid var(--line);border-radius:10px;padding:10px}
-.chiplist{display:flex;gap:8px;flex-wrap:wrap}
-.filelist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.hero-blank{display:grid;place-items:center;margin-top:40px;text-align:center}
+/* ---- Top Navigation Bar ------------------------------------------------ */
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #f3f4f6; /* light gray */
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  z-index: 1000;
+}
+
+.brand {
+  font-weight: 600;
+  text-decoration: none;
+  color: #111;
+}
+
+.brand:hover {
+  text-decoration: underline;
+}
+
+/* ---- Launcher Button (9-dot menu) ------------------------------------- */
+
+.launcher {
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.launcher:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.launcher:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* ---- Launcher Panel (the popup menu) ---------------------------------- */
+
+.panel {
+  position: absolute;
+  top: 56px;
+  right: 12px;
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+  padding: 12px;
+  z-index: 1100;
+}
+
+/* Hide panel when [hidden] is true */
+.panel[hidden] {
+  display: none !important;
+}
+
+/* Only display as grid when visible */
+.panel:not([hidden]) {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* ---- App Tiles inside the panel -------------------------------------- */
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-decoration: none;
+  border-radius: 10px;
+  color: #111;
+  font-size: 14px;
+}
+
+.tile:hover,
+.tile:focus {
+  background: #f3f4f6;
+  outline: none;
+}
+
+.tile .ico {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+/* ---- Example Page Layout ---------------------------------------------- */
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
