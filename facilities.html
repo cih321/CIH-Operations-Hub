@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Facilities • CIH Operations Hub</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">Center for Indigenous Health Operations Hub</a>
+    <div class="spacer"></div>
+    <button id="appbtn" class="launcher" aria-haspopup="menu" aria-expanded="false" aria-controls="apppanel" aria-label="Open app launcher">
+      <svg viewBox="0 0 24 24" width="22" height="22"><g fill="#111">
+        <circle cx="5" cy="5" r="1.8"/><circle cx="12" cy="5" r="1.8"/><circle cx="19" cy="5" r="1.8"/>
+        <circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>
+        <circle cx="5" cy="19" r="1.8"/><circle cx="12" cy="19" r="1.8"/><circle cx="19" cy="19" r="1.8"/>
+      </g></svg>
+    </button>
+    <div id="apppanel" class="panel" role="menu" hidden></div>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title">Facilities</h1>
+    <section id="facGrid" class="grid2"></section>
+  </main>
+
+  <!-- Big pop-up modal -->
+  <div id="facilityModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modaltitle" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title">
+          <span id="modaltitle"></span>
+          <span id="modalSubtitle" class="subtitle"></span>
+        </div>
+        <button id="modalClose" class="iconbtn" aria-label="Close">✕</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="ownership">Ownership</button>
+        <button class="tab" data-tab="utilities">Utilities</button>
+        <button class="tab" data-tab="access">Access</button>
+        <button class="tab" data-tab="log">Log</button>
+        <button class="tab" data-tab="associations">Associations</button>
+      </div>
+
+      <div class="tabpanes">
+        <!-- Overview -->
+        <section class="tabpane active" id="tab-overview">
+          <div class="kv"><label>Status</label><div id="ov-status"></div></div>
+          <div class="kv"><label>Street Address</label><div id="ov-street"></div></div>
+          <div class="kv"><label>Mailing Address</label><div id="ov-mail"></div></div>
+          <div class="kv"><label>GPS</label><div id="ov-gps"></div></div>
+          <div class="kv"><label>OneDrive Folder</label><div id="ov-onedrive"></div></div>
+          <h3>Facility Facts</h3>
+          <div class="facts">
+            <div><label>Year Built</label><div id="ov-year"></div></div>
+            <div><label>Square Feet</label><div id="ov-sqft"></div></div>
+            <div><label>Building Type</label><div id="ov-type"></div></div>
+          </div>
+          <h3>Site Operations Liaison</h3>
+          <div class="facts">
+            <div><label>Name</label><div id="ov-liaison-name"></div></div>
+            <div><label>Email</label><div id="ov-liaison-email"></div></div>
+            <div><label>Phone</label><div id="ov-liaison-phone"></div></div>
+          </div>
+          <div class="kv"><label>Notes</label><div id="ov-notes" class="prewrap"></div></div>
+        </section>
+
+        <!-- Ownership -->
+        <section class="tabpane" id="tab-ownership">
+          <div class="kv"><label>Building Ownership</label><div id="own-building"></div></div>
+          <div class="kv"><label>Land Ownership</label><div id="own-land"></div></div>
+          <div class="kv"><label>Landlord</label><div id="own-landlord"></div></div>
+
+          <h3>Rent Periods</h3>
+          <table class="table" id="rentTable">
+            <thead><tr><th>Start Date</th><th>End Date</th><th>Monthly Rent</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <button class="btn" id="rentAddBtn">Add Row</button>
+
+          <h3>Executed Leases</h3>
+          <ul id="leaseUploads" class="filelist"></ul>
+          <div class="upload">
+            <input type="file" id="leaseFile"/>
+            <button class="btn" id="leaseUploadBtn">Upload</button>
+          </div>
+          <div class="kv"><label>Notes</label><div id="own-notes" class="prewrap"></div></div>
+        </section>
+
+        <!-- Utilities -->
+        <section class="tabpane" id="tab-utilities">
+          <div id="utilCards" class="utilgrid"></div>
+          <button class="btn" id="utilAddBtn">Add Utility</button>
+        </section>
+
+        <!-- Access -->
+        <section class="tabpane" id="tab-access">
+          <div class="kv"><label>Access Method</label><div id="acc-method"></div></div>
+          <h3>Access Roster</h3>
+          <table class="table" id="accessTable">
+            <thead><tr><th>Person</th><th>Type</th><th>Areas/Doors</th><th>Issued</th><th>Reviewed</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <button class="btn" id="accessAddBtn">Add Person</button>
+        </section>
+
+        <!-- Log -->
+        <section class="tabpane" id="tab-log">
+          <div class="logbar">
+            <input id="logSearch" class="input" placeholder="Search log..."/>
+            <button class="btn" id="logAddBtn">Add Entry</button>
+          </div>
+          <ul id="logList" class="loglist"></ul>
+        </section>
+
+        <!-- Associations -->
+        <section class="tabpane" id="tab-associations">
+          <h3>Vehicles</h3>
+          <ul id="assocVehicles" class="chiplist"></ul>
+          <h3>Projects</h3>
+          <ul id="assocProjects" class="chiplist"></ul>
+          <h3>Staff/Teams</h3>
+          <ul id="assocStaff" class="chiplist"></ul>
+          <button class="btn" id="assocAddBtn">Add Association</button>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.api.js"></script>
+  <script src="app.main.js"></script>
+  <script src="facilities.js"></script>
+  <script>
+    setupTopbarLauncher([
+      { id:'facilities', label:'Facilities', href:'facilities.html', icon:'🏢' },
+      { id:'vehicles',   label:'Vehicles',   href:'#',              icon:'🚗' },
+      { id:'people',     label:'People',     href:'#',              icon:'👤' },
+      { id:'reports',    label:'Reports',    href:'#',              icon:'📊' },
+      { id:'settings',   label:'Settings',   href:'#',              icon:'⚙️' },
+    ]);
+    initFacilitiesPage(); // render grid, wire modal
+  </script>
+</body>
+</html>
